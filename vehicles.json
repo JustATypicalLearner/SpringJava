@@ -1,0 +1,1 @@
+[{"id":"1","category":"Car","brand":"bmw","model":"i1","year":2021,"plate":"LU12345","price":200.0,"attributes":{"fuelType":"Gasoline"}},{"id":"2","category":"Car","brand":"toyota","model":"auris","year":2015,"plate":"LU82141","price":300.0,"attributes":{"fuelType":"Gasoline"}}]
