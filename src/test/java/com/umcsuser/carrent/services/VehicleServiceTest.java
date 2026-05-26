@@ -36,8 +36,7 @@ class VehicleServiceTest {
         verify(vehicleValidatorMock, times(1)).validate(vehicle);
         verify(vehicleRepositoryMock, times(1)).save(vehicle);
 
-        // KOMUNIKAT O SUKCESIE
-        System.out.println("✅ TEST ZDANY: Nowy pojazd został pomyślnie zwalidowany i wysłany do zapisu!");
+        System.out.println("TEST ZDANY: Nowy pojazd został pomyślnie zwalidowany i wysłany do zapisu!");
     }
 
     @Test
@@ -51,8 +50,7 @@ class VehicleServiceTest {
         assertEquals(2, result.size(), "Powinno zwrócić dokładnie 2 pojazdy");
         assertEquals("Toyota", result.get(0).getBrand());
 
-        // KOMUNIKAT O SUKCESIE
-        System.out.println("✅ TEST ZDANY: Pobieranie listy wszystkich pojazdów (2 sztuki) zwróciło poprawne dane!");
+        System.out.println("TEST ZDANY: Pobieranie listy wszystkich pojazdów (2 sztuki) zwróciło poprawne dane!");
     }
 
     @Test
@@ -64,8 +62,7 @@ class VehicleServiceTest {
 
         verify(vehicleRepositoryMock, times(1)).deleteById(vehicleId);
 
-        // KOMUNIKAT O SUKCESIE
-        System.out.println("✅ TEST ZDANY: Usunięcie wolnego pojazdu powiodło się (repozytorium otrzymało komendę)!");
+        System.out.println("TEST ZDANY: Usunięcie wolnego pojazdu powiodło się (repozytorium otrzymało komendę)!");
     }
 
     @Test
@@ -77,7 +74,6 @@ class VehicleServiceTest {
 
         verify(vehicleRepositoryMock, never()).deleteById(anyString());
 
-        // KOMUNIKAT O SUKCESIE
-        System.out.println("✅ TEST ZDANY: Reguła biznesowa zadziałała! Zablokowano próbę usunięcia wypożyczonego pojazdu.");
+        System.out.println("TEST ZDANY: Reguła biznesowa zadziałała! Zablokowano próbę usunięcia wypożyczonego pojazdu.");
     }
 }

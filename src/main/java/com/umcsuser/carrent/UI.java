@@ -35,7 +35,7 @@ public class UI {
 
     public void start() {
         while (currentUser == null) {
-            System.out.println("\n=== SYSTEM WYPOŻYCZALNI (CONFIG-DRIVEN) ===");
+            System.out.println("\n=== SYSTEM WYPOŻYCZALNI ===");
             System.out.println("--- Dostępne pojazdy do wypożyczenia ---");
             boolean anyAvailable = false;
             for (Vehicle v : vehicleService.findAllVehicles()) {

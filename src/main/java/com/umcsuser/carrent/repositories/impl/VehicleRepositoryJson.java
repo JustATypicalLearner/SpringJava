@@ -44,7 +44,7 @@ public class VehicleRepositoryJson implements VehicleRepository {
                 } catch (NumberFormatException e) {
                 }
             }
-            vehicle.setId(String.valueOf(maxId + 1));
+            vehicle.setId(String.valueOf(maxId + 1)); // dodawanie nowego id
         }
 
         vehicles.removeIf(v -> v.getId() != null && v.getId().equals(vehicle.getId()));

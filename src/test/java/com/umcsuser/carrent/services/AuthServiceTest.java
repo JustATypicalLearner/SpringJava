@@ -21,7 +21,7 @@ class AuthServiceTest {
         authService = new AuthService(userRepositoryMock);
     }
 
-    // TESTY LOGOWANIA
+    // Logowanie
 
     @Test
     void shouldLoginAdminSuccessfully() {
@@ -37,76 +37,76 @@ class AuthServiceTest {
         assertEquals("admin", result.getLogin(), "Login powinien się zgadzać");
         assertEquals(Role.ADMIN, result.getRole(), "Rola powinna być ADMIN");
 
-        System.out.println("✅ TEST ZDANY: Logowanie na administratora (poprawne dane) działa bezbłędnie!");
+        System.out.println("TEST ZDANY: Logowanie na administratora (poprawne dane) działa bezbłędnie!");
     }
 
     @Test
     void shouldLoginUserWithCorrectPassword() {
-        String hashedPassword = BCrypt.hashpw("tajne123", BCrypt.gensalt());
-        User standardUser = new User("janek", hashedPassword, Role.USER);
-        when(userRepositoryMock.getUser("janek")).thenReturn(standardUser);
+        String hashedPassword = BCrypt.hashpw("1234", BCrypt.gensalt());
+        User standardUser = new User("test", hashedPassword, Role.USER);
+        when(userRepositoryMock.getUser("test")).thenReturn(standardUser);
 
-        User result = authService.login("janek", "tajne123");
+        User result = authService.login("test", "1234");
 
         assertNotNull(result, "Użytkownik powinien zostać zalogowany");
-        assertEquals("janek", result.getLogin());
+        assertEquals("test", result.getLogin());
         assertEquals(Role.USER, result.getRole(), "Rola powinna być ustawiona na USER");
 
-        System.out.println("✅ TEST ZDANY: Zalogowano istniejącego użytkownika używając poprawnego hasła!");
+        System.out.println("TEST ZDANY: Zalogowano istniejącego użytkownika używając poprawnego hasła!");
     }
 
     @Test
     void shouldNotLoginUserWithWrongPassword() {
-        String hashedPassword = BCrypt.hashpw("tajne123", BCrypt.gensalt());
-        User standardUser = new User("janek", hashedPassword, Role.USER);
-        when(userRepositoryMock.getUser("janek")).thenReturn(standardUser);
+        String hashedPassword = BCrypt.hashpw("1234", BCrypt.gensalt());
+        User standardUser = new User("test", hashedPassword, Role.USER);
+        when(userRepositoryMock.getUser("test")).thenReturn(standardUser);
 
-        User result = authService.login("janek", "złe_hasło");
+        User result = authService.login("test", "123");
 
         assertNull(result, "Logowanie z błędnym hasłem powinno zwrócić null");
 
-        System.out.println("✅ TEST ZDANY: Zablokowano próbę logowania z błędnym hasłem!");
+        System.out.println("TEST ZDANY: Zablokowano próbę logowania z błędnym hasłem!");
     }
 
     @Test
     void shouldNotLoginNonExistentUser() {
-        when(userRepositoryMock.getUser("duch")).thenReturn(null);
+        when(userRepositoryMock.getUser("me")).thenReturn(null);
 
-        User result = authService.login("duch", "jakies_haslo");
+        User result = authService.login("me", "123");
 
         assertNull(result, "Logowanie na nieistniejące konto powinno zwrócić null");
 
-        System.out.println("✅ TEST ZDANY: Pomyślnie odrzucono próbę zalogowania na nieistniejący login!");
+        System.out.println("TEST ZDANY: Pomyślnie odrzucono próbę zalogowania na nieistniejący login!");
     }
 
-    // TESTY REJESTRACJI
+    // rejestracja
 
     @Test
     void shouldRegisterNewUserSuccessfully() {
-        when(userRepositoryMock.addUser(eq("nowy_klient"), anyString())).thenReturn(true);
+        when(userRepositoryMock.addUser(eq("szef"), anyString())).thenReturn(true);
 
-        boolean result = authService.register("nowy_klient", "bezpieczne_haslo");
+        boolean result = authService.register("szef", "1234");
 
         assertTrue(result, "Rejestracja nowego użytkownika powinna zakończyć się sukcesem (zwrócić true)");
-        verify(userRepositoryMock, times(1)).addUser(eq("nowy_klient"), anyString());
+        verify(userRepositoryMock, times(1)).addUser(eq("szef"), anyString());
 
-        System.out.println("✅ TEST ZDANY: System pomyślnie zarejestrował nowego użytkownika!");
+        System.out.println("TEST ZDANY: System pomyślnie zarejestrował nowego użytkownika!");
     }
 
     @Test
     void shouldNotRegisterUserWithTakenLogin() {
-        User existingUser = new User("admin", "stare_haslo", Role.ADMIN);
+        User existingUser = new User("admin", "123", Role.ADMIN);
 
         when(userRepositoryMock.getUser("admin")).thenReturn(existingUser);
 
         when(userRepositoryMock.addUser(eq("admin"), anyString())).thenReturn(false);
 
-        boolean result = authService.register("admin", "moje_haslo");
+        boolean result = authService.register("admin", "123");
 
         assertFalse(result, "Próba rejestracji na zajęty login musi zakończyć się niepowodzeniem (zwrócić false)");
 
         verify(userRepositoryMock, never()).addUser(anyString(), anyString());
 
-        System.out.println("✅ TEST ZDANY: System poprawnie zablokował próbę utworzenia konta na już zajęty login!");
+        System.out.println("TEST ZDANY: System poprawnie zablokował próbę utworzenia konta na już zajęty login!");
     }
 }

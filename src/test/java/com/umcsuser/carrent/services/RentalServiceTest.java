@@ -31,14 +31,14 @@ class RentalServiceTest {
         Vehicle car = Vehicle.builder().id("1").brand("Ford").build();
         when(vehicleServiceMock.findVehicleById("1")).thenReturn(Optional.of(car));
         when(rentalRepositoryMock.isRented("1")).thenReturn(false);
-        when(rentalRepositoryMock.getRentalsByUser("janek")).thenReturn(Collections.emptyList());
+        when(rentalRepositoryMock.getRentalsByUser("szef")).thenReturn(Collections.emptyList());
 
-        boolean success = rentalService.rentVehicle("janek", "1");
+        boolean success = rentalService.rentVehicle("szef", "1");
 
         assertTrue(success, "Serwis powinien pozwolić na wypożyczenie wolnego auta");
         verify(rentalRepositoryMock, times(1)).addRental(any(Rental.class));
 
-        System.out.println("✅ TEST ZDANY: Użytkownik pomyślnie wypożyczył wolny i istniejący pojazd!");
+        System.out.println("TEST ZDANY: Użytkownik pomyślnie wypożyczył wolny i istniejący pojazd!");
     }
 
     @Test
@@ -46,52 +46,52 @@ class RentalServiceTest {
         Vehicle car = Vehicle.builder().id("1").brand("Ford").build();
         when(vehicleServiceMock.findVehicleById("1")).thenReturn(Optional.of(car));
         when(rentalRepositoryMock.isRented("1")).thenReturn(true);
-        when(rentalRepositoryMock.getRentalsByUser("janek")).thenReturn(Collections.emptyList());
+        when(rentalRepositoryMock.getRentalsByUser("szef")).thenReturn(Collections.emptyList());
 
-        boolean success = rentalService.rentVehicle("janek", "1");
+        boolean success = rentalService.rentVehicle("szef", "1");
 
         assertFalse(success, "Serwis powinien zablokować wypożyczenie zajętego auta");
         verify(rentalRepositoryMock, never()).addRental(any(Rental.class));
 
-        System.out.println("✅ TEST ZDANY: Zablokowano próbę wypożyczenia pojazdu, który jest aktualnie zajęty!");
+        System.out.println("TEST ZDANY: Zablokowano próbę wypożyczenia pojazdu, który jest aktualnie zajęty!");
     }
 
     @Test
     void shouldNotRentNonExistentVehicle() {
-        when(vehicleServiceMock.findVehicleById("999")).thenReturn(Optional.empty());
+        when(vehicleServiceMock.findVehicleById("10")).thenReturn(Optional.empty());
 
-        boolean success = rentalService.rentVehicle("janek", "999");
+        boolean success = rentalService.rentVehicle("szef", "10");
 
         assertFalse(success, "Wypożyczenie nieistniejącego auta musi zwrócić false");
         verify(rentalRepositoryMock, never()).addRental(any(Rental.class));
 
-        System.out.println("✅ TEST ZDANY: System odrzucił ID pojazdu, którego nie ma we flocie!");
+        System.out.println("TEST ZDANY: System odrzucił ID pojazdu, którego nie ma!");
     }
 
     @Test
     void shouldGetRentedVehicleData() {
-        Rental activeRental = new Rental("janek", "1");
-        when(rentalRepositoryMock.getRentalsByUser("janek")).thenReturn(List.of(activeRental));
+        Rental activeRental = new Rental("szef", "1");
+        when(rentalRepositoryMock.getRentalsByUser("szef")).thenReturn(List.of(activeRental));
 
-        List<Rental> userRentals = rentalService.getRentalsByUser("janek");
+        List<Rental> userRentals = rentalService.getRentalsByUser("szef");
 
         assertFalse(userRentals.isEmpty());
         assertEquals("1", userRentals.get(0).getVehicleId());
 
-        System.out.println("✅ TEST ZDANY: System poprawnie odzyskał dane o wypożyczonym pojeździe użytkownika!");
+        System.out.println("TEST ZDANY: System poprawnie odzyskał dane o wypożyczonym pojeździe użytkownika!");
     }
 
     @Test
     void shouldReturnVehicleSuccessfully() {
-        Rental activeRental = new Rental("janek", "1");
-        when(rentalRepositoryMock.getRentalsByUser("janek")).thenReturn(List.of(activeRental));
+        Rental activeRental = new Rental("szef", "1");
+        when(rentalRepositoryMock.getRentalsByUser("szef")).thenReturn(List.of(activeRental));
         when(rentalRepositoryMock.removeRentalByVehicleId("1")).thenReturn(true);
 
-        boolean success = rentalService.returnVehicle("janek");
+        boolean success = rentalService.returnVehicle("szef");
 
         assertTrue(success, "Zwrot pojazdu powinien się powieść");
         verify(rentalRepositoryMock, times(1)).removeRentalByVehicleId("1");
 
-        System.out.println("✅ TEST ZDANY: Pojazd został pomyślnie zwrócony i wypisany z rejestru użytkownika!");
+        System.out.println("TEST ZDANY: Pojazd został pomyślnie zwrócony i wypisany z rejestru użytkownika!");
     }
 }
