@@ -4,219 +4,219 @@ import com.umcsuser.carrent.models.Rental;
 import com.umcsuser.carrent.models.Role;
 import com.umcsuser.carrent.models.User;
 import com.umcsuser.carrent.models.Vehicle;
-import com.umcsuser.carrent.models.VehicleCategoryConfig;
-import com.umcsuser.carrent.services.*;
+import com.umcsuser.carrent.services.AuthServiceInterface;
+import com.umcsuser.carrent.services.RentalServiceInterface;
+import com.umcsuser.carrent.services.VehicleServiceInterface;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Scanner;
 
 public class UI {
 
-    private final VehicleCategoryConfigService configService;
-    private final VehicleService vehicleService;
-    private final UserService userService;
-    private final AuthService authService;
-    private final RentalService rentalService;
+    private final VehicleServiceInterface vehicleService;
+    private final AuthServiceInterface authService;
+    private final RentalServiceInterface rentalService;
+    private final Scanner scanner;
 
-    private final Scanner scanner = new Scanner(System.in);
-    private User currentUser = null;
-
-    public UI(VehicleCategoryConfigService configService,
-              VehicleService vehicleService,
-              UserService userService,
-              AuthService authService,
-              RentalService rentalService) {
-        this.configService = configService;
+    public UI(VehicleServiceInterface vehicleService, AuthServiceInterface authService, RentalServiceInterface rentalService) {
         this.vehicleService = vehicleService;
-        this.userService = userService;
         this.authService = authService;
         this.rentalService = rentalService;
+        this.scanner = new Scanner(System.in);
     }
 
     public void start() {
-        while (currentUser == null) {
+        while (true) {
             System.out.println("\n=== SYSTEM WYPOŻYCZALNI ===");
-            System.out.println("--- Dostępne pojazdy do wypożyczenia ---");
-            boolean anyAvailable = false;
-            for (Vehicle v : vehicleService.findAllVehicles()) {
-                if (!rentalService.isRented(v.getId())) {
-                    System.out.println(" - [ID: " + v.getId() + "] " + v.getBrand() + " " + v.getModel() + " [" + v.getCategory() + "] | Cena: " + v.getPrice() + " PLN");
-                    anyAvailable = true;
-                }
-            }
-            if (!anyAvailable) {
-                System.out.println(" (Obecnie wszystkie pojazdy są wypożyczone)");
-            }
+            displayAvailableVehicles();
             System.out.println("----------------------------------------");
-
             System.out.println("1. Zaloguj się");
             System.out.println("2. Zarejestruj się");
             System.out.println("0. Wyjdź");
             System.out.print("Wybór: ");
-            String choice = scanner.nextLine().trim();
 
-            if (choice.equals("1")) {
-                System.out.print("Login: "); String login = scanner.nextLine().trim();
-                System.out.print("Hasło: "); String password = scanner.nextLine().trim();
-                currentUser = authService.login(login, password);
-                if (currentUser == null) System.out.println("Błędne dane!\n");
-            } else if (choice.equals("2")) {
-                System.out.print("Nowy login: "); String login = scanner.nextLine().trim();
-                System.out.print("Nowe hasło: "); String password = scanner.nextLine().trim();
-                if (authService.register(login, password)) System.out.println("Zarejestrowano!\n");
-                else System.out.println("Login zajęty!\n");
-            } else if (choice.equals("0")) {
-                System.exit(0);
+            String choice = scanner.nextLine();
+            switch (choice) {
+                case "1":
+                    handleLogin();
+                    break;
+                case "2":
+                    handleRegistration();
+                    break;
+                case "0":
+                    System.out.println("Do widzenia!");
+                    return;
+                default:
+                    System.out.println("Nieprawidłowy wybór. Spróbuj ponownie.");
+            }
+        }
+    }
+
+    private void displayAvailableVehicles() {
+        System.out.println("--- Dostępne pojazdy do wypożyczenia ---");
+        List<Vehicle> allVehicles = vehicleService.findAllVehicles();
+        boolean anyAvailable = false;
+
+        for (Vehicle v : allVehicles) {
+            if (!rentalService.vehicleHasActiveRental(v.getId())) {
+                System.out.printf(" - [ID: %s] %s %s [%s] | Cena: %.2f PLN\n",
+                        v.getId(), v.getBrand(), v.getModel(), v.getCategory(), v.getPrice());
+                anyAvailable = true;
+            }
+        }
+
+        if (!anyAvailable) {
+            System.out.println(" (Obecnie wszystkie pojazdy są wypożyczone)");
+        }
+    }
+
+    private void handleLogin() {
+        System.out.print("Login: ");
+        String login = scanner.nextLine();
+        System.out.print("Hasło: ");
+        String password = scanner.nextLine();
+
+        Optional<User> userOpt = authService.login(login, password);
+
+        if (userOpt.isPresent()) {
+            User loggedInUser = userOpt.get();
+            System.out.println("Zalogowano pomyślnie! Witaj, " + loggedInUser.getLogin());
+            showUserMenu(loggedInUser);
+        } else {
+            System.out.println("Błędne dane logowania!");
+        }
+    }
+
+    private void handleRegistration() {
+        System.out.print("Podaj nowy login: ");
+        String login = scanner.nextLine();
+        System.out.print("Podaj hasło: ");
+        String password = scanner.nextLine();
+
+        boolean success = authService.register(login, password);
+        if (success) {
+            System.out.println("Konto zostało utworzone! Możesz się teraz zalogować.");
+        } else {
+            System.out.println("Taki login już istnieje w bazie!");
+        }
+    }
+
+    private void showUserMenu(User user) {
+        while (true) {
+            System.out.println("\n--- MENU UŻYTKOWNIKA (" + user.getRole() + ") ---");
+            if (user.getRole() == Role.ADMIN) {
+                System.out.println("1. Dodaj nowy pojazd");
+                System.out.println("2. Usuń pojazd");
+                System.out.println("3. Wyświetl wszystkie wypożyczenia w systemie");
             } else {
-                System.out.println("Nieznana opcja!");
+                System.out.println("1. Wypożycz pojazd");
+                System.out.println("2. Oddaj pojazd");
+                System.out.println("3. Historia moich wypożyczeń");
             }
-        }
-
-        System.out.println("\nWitaj, " + currentUser.getLogin() + "!");
-        if (currentUser.getRole() == Role.ADMIN) adminMenu();
-        else userMenu();
-    }
-
-    private void adminMenu() {
-        while (true) {
-            System.out.println("\n--- ADMIN MENU ---");
-            System.out.println("1. Dodaj pojazd");
-            System.out.println("2. Usuń pojazd");
-            System.out.println("3. Pokaż wszystkie pojazdy");
-            System.out.println("4. Usuń użytkownika");
             System.out.println("0. Wyloguj");
             System.out.print("Wybór: ");
-            String choice = scanner.nextLine().trim();
 
-            switch (choice) {
-                case "1" -> addVehicleInteractive();
-                case "2" -> {
-                    System.out.print("Podaj ID pojazdu do usunięcia: ");
-                    vehicleService.deleteVehicle(scanner.nextLine().trim());
+            String choice = scanner.nextLine();
+
+            if (choice.equals("0")) {
+                System.out.println("Wylogowano.");
+                break;
+            }
+
+            try {
+                if (user.getRole() == Role.ADMIN) {
+                    handleAdminChoice(choice);
+                } else {
+                    handleStandardUserChoice(choice, user);
                 }
-                case "3" -> vehicleService.findAllVehicles().forEach(v -> System.out.println("ID: " + v.getId() + " | " + v.getBrand() + " " + v.getModel() + " (" + v.getCategory() + ")"));
-                case "4" -> {
-                    System.out.print("Podaj login usera do usunięcia: ");
-                    userService.deleteUser(scanner.nextLine().trim());
+            } catch (Exception e) {
+                System.out.println("Błąd operacji: " + e.getMessage());
+            }
+        }
+    }
+
+    private void handleAdminChoice(String choice) {
+        switch (choice) {
+            case "1":                System.out.print("ID Pojazdu: ");
+                String id = scanner.nextLine();
+                System.out.print("Kategoria (np. Car): ");
+                String category = scanner.nextLine();
+                System.out.print("Marka: ");
+                String brand = scanner.nextLine();
+                System.out.print("Model: ");
+                String model = scanner.nextLine();
+                System.out.print("Rok produkcji: ");
+                int year = Integer.parseInt(scanner.nextLine());
+                System.out.print("Rejestracja: ");
+                String plate = scanner.nextLine();
+                System.out.print("Cena za dzień: ");
+                double price = Double.parseDouble(scanner.nextLine());
+
+                Vehicle v = new Vehicle();
+                v.setId(id);
+                v.setCategory(category);
+                v.setBrand(brand);
+                v.setModel(model);
+                v.setYear(year);
+                v.setPlate(plate);
+                v.setPrice(price);
+
+                vehicleService.addVehicle(v);
+                System.out.println("Pojazd dodany do bazy!");
+                break;
+            case "2":
+                System.out.print("Podaj ID pojazdu do usunięcia: ");
+                String delId = scanner.nextLine();
+                vehicleService.deleteVehicle(delId);
+                System.out.println("Wydano polecenie usunięcia.");
+                break;
+            case "3":
+                List<Rental> allRentals = rentalService.findAllRentals();
+                if (allRentals.isEmpty()) {
+                    System.out.println("Brak wypożyczeń w systemie.");
+                } else {
+                    allRentals.forEach(r -> System.out.println(r.toString()));
                 }
-                case "0" -> { currentUser = null; start(); return; }
-                default -> System.out.println("Nieznana opcja.");
-            }
+                break;
+            default:
+                System.out.println("Nieznana opcja administratora.");
         }
     }
 
-    private void userMenu() {
-        while (true) {
-            System.out.println("\n--- USER MENU ---");
-            System.out.println("1. Zobacz dostępne pojazdy");
-            System.out.println("2. Wyświetl mój wypożyczony pojazd");
-            System.out.println("3. Wypożycz pojazd");
-            System.out.println("4. Zwróć pojazd");
-            System.out.println("0. Wyloguj");
-            System.out.print("Wybór: ");
-            String choice = scanner.nextLine().trim();
+    private void handleStandardUserChoice(String choice, User user) {
+        switch (choice) {
+            case "1":
+                if (rentalService.userHasActiveRental(user.getId())) {
+                    System.out.println("Masz już aktywne wypożyczenie! Zwróć najpierw obecny pojazd.");
+                    return;
+                }
+                displayAvailableVehicles();
+                System.out.print("Podaj ID pojazdu, który chcesz wypożyczyć: ");
+                String vehicleId = scanner.nextLine();
 
-            switch (choice) {
-                case "1" -> showAvailableVehicles();
-                case "2" -> showMyRentedVehicle();
-                case "3" -> rentVehicle();
-                case "4" -> returnVehicle();
-                case "0" -> { currentUser = null; start(); return; }
-                default -> System.out.println("Nieznana opcja.");
-            }
+                rentalService.rentVehicle(user.getId(), vehicleId);
+                System.out.println("Pomyślnie wypożyczono pojazd!");
+                break;
+            case "2":
+                rentalService.returnVehicle(user.getId());
+                System.out.println("Pojazd został zwrócony. Dziękujemy!");
+                break;
+            case "3":
+                List<Rental> myRentals = rentalService.findUserRentals(user.getId());
+                if (myRentals.isEmpty()) {
+                    System.out.println("Brak historii wypożyczeń.");
+                } else {
+                    System.out.println("--- Twoja historia ---");
+                    myRentals.forEach(r -> {
+                        String status = r.isActive() ? "[W TRAKCIE]" : "[ZWRÓCONY]";
+                        System.out.printf("%s Pojazd ID: %s | Data wypożyczenia: %s\n",
+                                status, r.getVehicleId(), r.getRentDateTime());
+                    });
+                }
+                break;
+            default:
+                System.out.println("Nieznana opcja.");
         }
-    }
-
-    private void showAvailableVehicles() {
-        System.out.println("\n--- POJAZDY DOSTĘPNE DO WYPOŻYCZENIA ---");
-        boolean any = false;
-        for (Vehicle v : vehicleService.findAllVehicles()) {
-            if (!rentalService.isRented(v.getId())) {
-                System.out.println("ID: " + v.getId() + " | " + v.getBrand() + " " + v.getModel() + " [" + v.getCategory() + "] | Cena: " + v.getPrice() + " PLN/doba");
-                any = true;
-            }
-        }
-        if (!any) {
-            System.out.println("Niestety, aktualnie brak dostępnych pojazdów w bazie.");
-        }
-    }
-
-    private void showMyRentedVehicle() {
-        System.out.println("\n--- TWÓJ AKTUALNIE WYPOŻYCZONY POJAZD ---");
-        List<Rental> myRentals = rentalService.getRentalsByUser(currentUser.getLogin());
-
-        if (myRentals.isEmpty()) {
-            System.out.println("Nie posiadasz obecnie żadnych aktywnych wypożyczeń.");
-            return;
-        }
-
-        String rentedVehicleId = myRentals.get(0).getVehicleId();
-
-        vehicleService.findVehicleById(rentedVehicleId).ifPresentOrElse(
-                vehicle -> {
-                    System.out.println("ID Pojazdu: " + vehicle.getId());
-                    System.out.println("Kategoria : " + vehicle.getCategory());
-                    System.out.println("Model     : " + vehicle.getBrand() + " " + vehicle.getModel());
-                    System.out.println("Rejestracja: " + vehicle.getPlate());
-                    System.out.println("Cena za dobę: " + vehicle.getPrice() + " PLN");
-
-                    if (!vehicle.getAttributes().isEmpty()) {
-                        System.out.println("Specyfikacja:");
-                        vehicle.getAttributes().forEach((cecha, wartosc) ->
-                                System.out.println("  - " + cecha + ": " + wartosc)
-                        );
-                    }
-                },
-                () -> System.out.println("Błąd: Wypożyczyłeś pojazd o ID " + rentedVehicleId + ", ale nie ma go w bazie danych floty.")
-        );
-    }
-
-    private void addVehicleInteractive() {
-        System.out.println("Dostępne kategorie: ");
-        configService.findAllCategories().forEach(c -> System.out.println("- " + c.getCategory()));
-
-        try {
-            System.out.print("Podaj kategorię: ");
-            VehicleCategoryConfig config = configService.getByCategory(scanner.nextLine().trim());
-
-            System.out.print("Marka: "); String brand = scanner.nextLine().trim();
-            System.out.print("Model: "); String model = scanner.nextLine().trim();
-            System.out.print("Rok: "); int year = Integer.parseInt(scanner.nextLine().trim());
-            System.out.print("Rejestracja: "); String plate = scanner.nextLine().trim();
-            System.out.print("Cena: "); double price = Double.parseDouble(scanner.nextLine().trim());
-
-            Vehicle vehicle = Vehicle.builder()
-                    .category(config.getCategory())
-                    .brand(brand).model(model).year(year).plate(plate).price(price)
-                    .build();
-
-            config.getAttributes().forEach((attrName, attrType) -> {
-                System.out.print("Podaj " + attrName + " (" + attrType + "): ");
-                String raw = scanner.nextLine().trim();
-                Object val = switch (attrType.toLowerCase()) {
-                    case "string" -> raw;
-                    case "integer" -> Integer.parseInt(raw);
-                    case "number" -> Double.parseDouble(raw);
-                    case "boolean" -> Boolean.parseBoolean(raw);
-                    default -> raw;
-                };
-                vehicle.addAttribute(attrName, val);
-            });
-
-            vehicleService.addVehicle(vehicle);
-            System.out.println("Dodano pojazd do bazy!");
-        } catch (Exception e) {
-            System.out.println("Błąd: " + e.getMessage());
-        }
-    }
-
-    private void rentVehicle() {
-        System.out.print("Podaj ID pojazdu do wypożyczenia: ");
-        String id = scanner.nextLine().trim();
-        rentalService.rentVehicle(currentUser.getLogin(), id);
-    }
-
-    private void returnVehicle() {
-        rentalService.returnVehicle(currentUser.getLogin());
     }
 }

@@ -1,0 +1,35 @@
+package com.umcsuser.carrent.db;
+
+import com.umcsuser.carrent.models.Rental;
+import com.umcsuser.carrent.models.User;
+import com.umcsuser.carrent.models.Vehicle;
+import org.hibernate.SessionFactory;
+import org.hibernate.cfg.Configuration;
+
+public class HibernateConfig {
+
+    private static final SessionFactory sessionFactory;
+
+    static {
+        try {
+            Configuration configuration = new Configuration();
+            configuration.setProperty("hibernate.connection.driver_class", "org.postgresql.Driver");            configuration.setProperty("hibernate.connection.url", System.getenv("DB_URL"));
+            configuration.setProperty("hibernate.dialect", "org.hibernate.dialect.PostgreSQLDialect");
+            configuration.setProperty("hibernate.show_sql", "false");
+            configuration.setProperty("hibernate.format_sql", "false");
+            configuration.setProperty("hibernate.hbm2ddl.auto", "validate");            configuration.addAnnotatedClass(User.class);
+            configuration.addAnnotatedClass(Vehicle.class);
+            configuration.addAnnotatedClass(Rental.class);
+
+            sessionFactory = configuration.buildSessionFactory();
+        } catch (Throwable ex) {
+            throw new ExceptionInInitializerError("Initialize Hibernate ERROR: " + ex);
+        }
+    }
+
+    public static SessionFactory getSessionFactory() {
+        return sessionFactory;
+    }
+
+    private HibernateConfig() {}
+}

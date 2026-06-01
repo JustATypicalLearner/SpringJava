@@ -1,36 +1,32 @@
 package com.umcsuser.carrent;
 
-import com.umcsuser.carrent.repositories.RentalRepository;
-import com.umcsuser.carrent.repositories.UserRepository;
-import com.umcsuser.carrent.repositories.VehicleCategoryConfigRepository;
-import com.umcsuser.carrent.repositories.VehicleRepository;
-
-import com.umcsuser.carrent.repositories.impl.RentalRepositoryImpl;
-import com.umcsuser.carrent.repositories.impl.UserRepositoryImpl;
-import com.umcsuser.carrent.repositories.impl.VehicleCategoryConfigJsonRepository;
-import com.umcsuser.carrent.repositories.impl.VehicleRepositoryJson;
-
+import com.umcsuser.carrent.db.HibernateConfig;
+import com.umcsuser.carrent.models.Role;
+import com.umcsuser.carrent.models.User;
+import com.umcsuser.carrent.repositories.impl.*;
 import com.umcsuser.carrent.services.*;
+import com.umcsuser.carrent.services.impl.AuthHibernateService;
+import com.umcsuser.carrent.services.impl.RentalHibernateService;
+import com.umcsuser.carrent.services.impl.VehicleHibernateService;
+import org.mindrot.jbcrypt.BCrypt;
+
+import java.util.UUID;
 
 public class Main {
-    public static void main(String[] args) {
+    public static void main(String[] args) {        String mode = (args.length > 0) ? args[0].toLowerCase() : "hibernate";
+        AuthServiceInterface authService;
+        VehicleServiceInterface vehicleService;
+        RentalServiceInterface rentalService;
 
-        VehicleCategoryConfigRepository configRepo = new VehicleCategoryConfigJsonRepository();
-        VehicleRepository vehicleRepo = new VehicleRepositoryJson();
+        if ("hibernate".equals(mode)) {
+            System.out.println("Uruchamianie w trybie: HIBERNATE (PostgreSQL ORM)");            UserHibernateRepository userRepo = new UserHibernateRepository();
+            VehicleHibernateRepository vehicleRepo = new VehicleHibernateRepository();
+            RentalHibernateRepository rentalRepo = new RentalHibernateRepository();            authService = new AuthHibernateService(userRepo);
+            vehicleService = new VehicleHibernateService(vehicleRepo);
+            rentalService = new RentalHibernateService(rentalRepo, vehicleRepo, userRepo);            HibernateConfig.getSessionFactory();
 
-        UserRepository userRepo = new UserRepositoryImpl();
-        RentalRepository rentalRepo = new RentalRepositoryImpl();
-
-        VehicleCategoryConfigService configService = new VehicleCategoryConfigService(configRepo);
-        VehicleValidator validator = new VehicleValidator(configService);
-
-        VehicleService vehicleService = new VehicleService(validator, vehicleRepo, rentalRepo);
-        UserService userService = new UserService(userRepo, rentalRepo);
-        AuthService authService = new AuthService(userRepo);
-
-        RentalService rentalService = new RentalService(rentalRepo, vehicleService);
-
-        UI ui = new UI(configService, vehicleService, userService, authService, rentalService);
+        } else {
+            throw new IllegalArgumentException("Ten kod został zoptymalizowany pod tryb 'hibernate'.");        }        UI ui = new UI(vehicleService, authService, rentalService);
         ui.start();
     }
 }
