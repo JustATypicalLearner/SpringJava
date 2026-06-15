@@ -1,34 +1,21 @@
 package com.umcsuser.carrent.services;
 
 import com.umcsuser.carrent.models.User;
-import com.umcsuser.carrent.repositories.UserRepository;
-import com.umcsuser.carrent.repositories.RentalRepository;
+import com.umcsuser.carrent.repositories.impl.UserRepositoryJpaAdapter;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.stereotype.Service;
 
-import java.util.List;
-
+@Service
 public class UserService {
 
-    private final UserRepository userRepository;
-    private final RentalRepository rentalRepository;
+    private final UserRepositoryJpaAdapter userRepository;
 
-    public UserService(UserRepository userRepository, RentalRepository rentalRepository) {
+    public UserService(UserRepositoryJpaAdapter userRepository) {
         this.userRepository = userRepository;
-        this.rentalRepository = rentalRepository;
     }
 
-    public void deleteUser(String login) {
-        if (login.equals("admin")) {
-            System.out.println("Nie można usunąć głównego administratora.");
-            return;
-        }
-        if (!rentalRepository.getRentalsByUser(login).isEmpty()) {
-            System.out.println("BŁĄD: Nie można usunąć użytkownika! Posiada aktywne wypożyczenie.");
-            return;
-        }
-        if (userRepository.removeUser(login)) {
-            System.out.println("Użytkownik usunięty.");
-        } else {
-            System.out.println("Nie znaleziono użytkownika.");
-        }
+    public User findByLogin(String login) {
+        return userRepository.findByLogin(login)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + login));
     }
 }
