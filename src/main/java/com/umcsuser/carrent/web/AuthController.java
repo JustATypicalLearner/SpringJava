@@ -2,7 +2,11 @@ package com.umcsuser.carrent.web;
 
 import com.umcsuser.carrent.dto.LoginRequest;
 import com.umcsuser.carrent.dto.LoginResponse;
+import com.umcsuser.carrent.dto.RegisterRequest;
+import com.umcsuser.carrent.dto.RegisterResponse;
+import com.umcsuser.carrent.models.User;
 import com.umcsuser.carrent.security.JwtUtil;
+import com.umcsuser.carrent.services.UserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -20,10 +24,12 @@ public class AuthController {
 
     private final AuthenticationManager authenticationManager;
     private final JwtUtil jwtUtil;
+    private final UserService userService;
 
-    public AuthController(AuthenticationManager authenticationManager, JwtUtil jwtUtil) {
+    public AuthController(AuthenticationManager authenticationManager, JwtUtil jwtUtil, UserService userService) {
         this.authenticationManager = authenticationManager;
         this.jwtUtil = jwtUtil;
+        this.userService = userService;
     }
 
     @PostMapping("/login")
@@ -37,5 +43,12 @@ public class AuthController {
         } catch (BadCredentialsException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
+    }
+
+    @PostMapping("/register")
+    public ResponseEntity<RegisterResponse> register(@RequestBody RegisterRequest request) {
+        User created = userService.register(request.login(), request.password(), request.role());
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(new RegisterResponse(created.getLogin(), created.getRole().name()));
     }
 }
